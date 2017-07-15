@@ -1,26 +1,53 @@
-.slider .track {
-    -fx-height:600;
-    -fx-align: center;
+.button {
+	-fx-font-size: 12px;
+    -fx-padding: 10 20 10 20;
 }
-
-/* 
-.chart-series-line {    
-    -fx-chart-series-line: 3px #3fff75;
-}
-*/
- 
-.chart { 
-	-fx-stroke: #3fff75;
-	-fx-fill: #3fff75;    
-				
-}
-.seriesBreedNC { -fx-stroke: #f0e68c; }
 
 .chart-plot-background {
     -fx-background-color: #ffffff;
+}
+
+.chart-title {
+	-fx-text-fill: #ffffff;
 }
 
 .root {
 	-fx-background-color: #000000;
 	-fx-text-fill: #ffffff;
 }
+
+#input-slider {
+    -fx-margin: 20 20 20 20;
+}
+
+#root-horizontal-control-slider {
+	-fx-margin: 30 30 30 30;
+	
+}
+
+#root-horizontal-control-button {
+	-fx-margin: 30 30 30 30;
+    -fx-padding: 10 0 10 0;
+	
+}
+
+#root-horizontal-charts {
+	-fx-margin: 10 30 10 30;
+}
+
+#root-vertical {
+    -fx-padding: 20 10 10 10;
+}
+
+#label-title {
+	-fx-font-size: 40px;
+	-fx-text-fill: #ffffff;
+}
+
+#label-author {
+	-fx-font: italic 15px "Verdana";
+	-fx-text-fill: #ffffff;
+	-fx-padding: 1 0 20 30;
+	
+}
+

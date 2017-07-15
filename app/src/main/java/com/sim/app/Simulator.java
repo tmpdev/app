@@ -3,36 +3,34 @@ package com.sim.app;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.util.LongAccumulator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sim.agent.*;
 import com.sim.agent.Agent.BREED;
-import com.sim.app.common.DataResource;
 import com.sim.app.common.SparkConnection;
-
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 
 import static com.google.common.base.Preconditions.*;
 import static com.sim.app.SimulationUtils.*;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * Performs simulation on spark cluster (localhost). Spark configuration is specified <code>com.sim.app.common.SparkConnection</code>.
+ * Data is retrieved from <code>DataResource.PATH_SIM</code> and the <code>Agent</code>s are stored in a <code>JavaRDD</code>
+ * on which certain transformations are performed.
+ * 
+ * Simulation is performed by <code>simulate()</code>
+ * Results are stored in a list of <code>com.sim.app.SimulationRecord</code>s and can be used for charting in App.java.
+ * 
+ * @author Max Hoefl
+ */
 public class Simulator implements Serializable{
 
+	private static final long serialVersionUID = 87067650863877846L;
 	private final JavaSparkContext spCtxt;
 	private JavaRDD<Agent> simulationResult = null;
 	
@@ -43,6 +41,17 @@ public class Simulator implements Serializable{
 		this.spCtxt = SparkConnection.getContext();
 	}
 	
+	/**
+	 * Run simulation for @param numYears. 
+	 * 
+	 * @param numYears		Number of years to run the simulation for
+	 * @param brandFactor	is a parameter that influences the <code>evolve()</code> method in each <code>Agent</code>
+	 * @return <code>List<SimulationRecord</code> that contains per list item the number of <code>Agent</code>s from each <code>BREED</code>,
+	 * 			the number of <code>BREED</code>s lost so far and the number of <code>BREED.C</code>s regained.
+	 * @see com.sim.agent.Agent
+	 * @see com.sim.agent.Agent.BREED
+	 * @see com.sim.app.SimulationRecord
+	 */
 	public List<SimulationRecord> simulate(final int numYears, final double brandFactor)
 	{
 		checkArgument(numYears >= 0, "Non-negative number of years required.");
@@ -95,32 +104,12 @@ public class Simulator implements Serializable{
 		return simulationResult;
 	}
 	
-	public static class CountsAccumulator implements Function<Agent, Agent>
-	{		
-		private final LongAccumulator accLostC;
-		private final LongAccumulator accLostNC;
-		private final LongAccumulator accRegainedC;
-		
-		public CountsAccumulator(final LongAccumulator accLostC, final LongAccumulator accLostNC, final LongAccumulator accRegainedC)
-		{
-			this.accLostC = accLostC;
-			this.accLostNC = accLostNC;
-			this.accRegainedC = accRegainedC;
-		}
-		
-		@Override
-		public Agent call(Agent agent) throws Exception {
-			AgentPlain agentPlain = (AgentPlain) agent;
-			accLostC.add(agentPlain.getCountLostC());
-			accLostNC.add(agentPlain.getCountLostNC());
-			accRegainedC.add(agentPlain.getCountRegainedC());
-			return agent;
-		}
-	}
-	
-	
+	/**
+	 * Function to filter <code>JavaRDD</code> for <code>Agent.BREED</code>.
+	 */
 	public static class BreedFilter implements Function<Agent, Boolean>
 	{
+		private static final long serialVersionUID = -3802744511396165538L;
 		private final BREED breed;
 		public BreedFilter(final BREED breed)
 		{
@@ -133,53 +122,4 @@ public class Simulator implements Serializable{
 			return agentPlain.getBreed() == breed;
 		}
 	}
-	
-	
-	
-	/*public static void main(String[] args)
-	{
-		SparkOperationsSimudyne simudyne = new SparkOperationsSimudyne();
-		simudyne.simulate(15, 1);
-		
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}*/
-	
-	/*@Override
-	public void start(Stage primaryStage) throws Exception
-	{
-		VBox root = new VBox();
-		
-		NumberAxis xAxis = new NumberAxis("Time", 0, 20, 5);
-		NumberAxis yAxis = new NumberAxis("Price", 0, 50, 5);
-		
-		XYChart.Series<Number, Number> seriesApple = new XYChart.Series<>();
-		seriesApple.setName("Apple");
-		seriesApple.getData().add(new XYChart.Data<Number, Number>(0.0, 33.0));
-		seriesApple.getData().add(new XYChart.Data<Number, Number>(1.0, 35.0));
-		seriesApple.getData().add(new XYChart.Data<Number, Number>(2.0, 34.0));
-		seriesApple.getData().add(new XYChart.Data<Number, Number>(3.0, 31.0));
-		seriesApple.getData().add(new XYChart.Data<Number, Number>(4.0, 33.0));
-		seriesApple.getData().add(new XYChart.Data<Number, Number>(5.0, 35.0));
-		seriesApple.getData().add(new XYChart.Data<Number, Number>(6.0, 37.0));
-		seriesApple.getData().add(new XYChart.Data<Number, Number>(7.0, 40.0));
-		
-		LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
-		chart.setTitle("Price of apples");
-		chart.getData().add(seriesApple);
-		chart.setLegendVisible(true);
-		
-		root.getChildren().add(chart);
-		
-		Scene scene = new Scene(root, 400,400);
-		primaryStage.setTitle("ChartsMain");
-		primaryStage.setScene(scene);
-		primaryStage.show();
-	}*/
-
-	
 }

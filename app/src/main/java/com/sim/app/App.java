@@ -5,13 +5,7 @@ import static com.google.common.base.Preconditions.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import org.apache.spark.api.java.JavaRDD;
-import org.mortbay.log.Log;
 
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -20,7 +14,6 @@ import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -34,16 +27,25 @@ import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
+import static com.sim.app.AppUtils.*;
 
+/**
+ * Main app that presents the user with a slider for model input, a button for requesting a simulation
+ * and charts for model output.
+ * 
+ * The scene is created in <code>mainScene()</code>. Charts are created using @see AppUtils
+ * 
+ * @author Max Hoefl
+ *
+ */
 public class App extends Application 
 {
-	//private static ExecutorService executor;
-	//private static SparkOperationsSimudyne simulation = new SparkOperationsSimudyne();
 	private static final int NUM_YEARS = 15;
 	private Simulator simulation;
 	private List<SimulationRecord> records = new ArrayList<SimulationRecord>();
@@ -56,41 +58,55 @@ public class App extends Application
 	{
 		launch(args);
 	}	
-
 	
-	
+	/**
+	 * Most important method that creates the scene for the app.
+	 * Contains a header and subheader (for author), slider, button and charts.
+	 */
 	public VBox mainScene()
 	{
 		VBox rootVertical = new VBox();
-		HBox rootHorizontalControl = new HBox();
+		rootVertical.setId("root-vertical");
+		
+		Label title = new Label("Simulation");
+		title.setId("label-title");
+		rootVertical.getChildren().add(title);
+		
+		Label author = new Label("by Max Hoefl");
+		author.setId("label-author");
+		rootVertical.getChildren().add(author);
+		
+		HBox rootHorizontalControlSlider = new HBox();
+		rootHorizontalControlSlider.setId("root-horizontal-control-slider");
+		
+		HBox rootHorizontalControlButton = new HBox();
+		rootHorizontalControlButton.setId("root-horizontal-control-button");
+		
 		HBox rootHorizontalCharts = new HBox();
-
-		NumberAxis xAxis = new NumberAxis("Year", 0, 15, 1);
-		NumberAxis yAxis = new NumberAxis("Count", 0, 10000, 1000);
-		XYChart.Series<Number, Number> seriesBreedC = new XYChart.Series<>();
-		seriesBreedC.setName("Breed C");
-		XYChart.Series<Number, Number> seriesBreedNC = new XYChart.Series<>();
-		seriesBreedNC.setName("Breed NC");
+		rootHorizontalCharts.setId("root-horizontal-charts");
 		
-		NumberAxis lostXAxis = new NumberAxis("Year", 0, 15, 1);
-		NumberAxis lostYAxis = new NumberAxis("Count", 0, 50000, 5000);
-		XYChart.Series<Number, Number> seriesLostBreedC = new XYChart.Series<>();
-		seriesBreedC.setName("Lost Breed C");
-		XYChart.Series<Number, Number> seriesLostBreedNC = new XYChart.Series<>();
-		seriesBreedNC.setName("Lost Breed NC");
-		
-		NumberAxis regainedXAxis = new NumberAxis("Year", 0, 15, 1);
-		NumberAxis regainedYAxis = new NumberAxis("Count", 0, 50000, 5000);
-		XYChart.Series<Number, Number> seriesRegainedBreedC = new XYChart.Series<>();
-		seriesBreedC.setName("Lost Breed C");
+		XYChart.Series<Number, Number> seriesBreedC = createXYChartSeries("Breed C");
+		XYChart.Series<Number, Number> seriesBreedNC = createXYChartSeries("Breed NC");
+		XYChart.Series<Number, Number> seriesLostBreedC = createXYChartSeries("Lost Breed C");
+		XYChart.Series<Number, Number> seriesLostBreedNC = createXYChartSeries("Lost Breed NC");
+		XYChart.Series<Number, Number> seriesRegainedBreedC = createXYChartSeries("Regained Breed C");
 
+		LineChart<Number, Number> countChart = createLineChart("Breed Count", "Time", "Count", 0, 15, 1, 0, 10000, 1000, seriesBreedC, seriesBreedNC);
+		LineChart<Number, Number> lostChart = createLineChart("Lost Count (cumulative)", "Time", "Count", 0, 15, 1, 0, 50000, 5000, seriesLostBreedC, seriesLostBreedNC);
+		LineChart<Number, Number> regainedChart = createLineChart("Regained Count (cumulative)", "Time", "Count", 0, 15, 1, 0, 50000, 5000, seriesRegainedBreedC);
+		
 		
 		slider = createSlider(0.1, 2.9, 0.1);
-		rootHorizontalControl.getChildren().add(slider);
+		slider.setId("input-slider");
+		HBox.setHgrow(slider, Priority.ALWAYS);
+		Label sliderText = new Label("Brand factor:   ");
+		sliderText.setTextFill(Color.WHITE);
+		rootHorizontalControlSlider.getChildren().add(sliderText);
+		rootHorizontalControlSlider.getChildren().add(slider);
+		
 		
 		button = new Button("Start");
-		rootHorizontalControl.getChildren().add(button);
-		
+		rootHorizontalControlButton.getChildren().add(button);
 		button.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
@@ -126,49 +142,31 @@ public class App extends Application
 			}
 		});
 		
-		
-		LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
-		chart.setTitle("Agent Count");
-		chart.getData().add(seriesBreedC);
-		chart.getData().add(seriesBreedNC);
-		
-		chart.setLegendVisible(true);
-		rootHorizontalCharts.getChildren().add(chart);
-		
-		LineChart<Number, Number> lostChart = new LineChart<>(lostXAxis, lostYAxis);
-		lostChart.setTitle("Lost Agent Count");
-		lostChart.getData().add(seriesLostBreedC);
-		lostChart.getData().add(seriesLostBreedNC);
-		
-		lostChart.setLegendVisible(true);
+		rootHorizontalCharts.getChildren().add(countChart);
 		rootHorizontalCharts.getChildren().add(lostChart);
-		
-		LineChart<Number, Number> regainedChart = new LineChart<>(regainedXAxis, regainedYAxis);
-		regainedChart.setTitle("Regained Agent C Count");
-		regainedChart.getData().add(seriesRegainedBreedC);
-		
-		regainedChart.setLegendVisible(true);
 		rootHorizontalCharts.getChildren().add(regainedChart);
 		
-		rootVertical.getChildren().add(rootHorizontalControl);
+		rootVertical.getChildren().add(rootHorizontalControlSlider);
+		rootVertical.getChildren().add(rootHorizontalControlButton);
 		rootVertical.getChildren().add(rootHorizontalCharts);
 		return rootVertical;
 	}
 	
-	
+	/**
+	 * Implicitly called by the from Application inherited method <code>launch()</code>
+	 */
 	@Override
 	public void start(Stage primaryStage) throws Exception 
 	{
-		//rootHorizontal.getChildren().add(lostAgentCountBox());
-		
 		File f = new File("css/line-charts.css");
+		checkArgument(f.exists() && f.canRead(), "Css file does not exist or cannot read from it.");
+		
 		Scene scene = new Scene(mainScene(), 1200, 600);
 		scene.getStylesheets().add("file:///" + f.getAbsolutePath());
-		/*scene.getStylesheets().add(
-			      getClass().getResource("/spark-big-data-analytics/css/line-charts.css").toExternalForm()
-			    );*/
+		
 		primaryStage.setTitle("ChartsMain");
 		primaryStage.setScene(scene);
+		primaryStage.setResizable(false);
 		primaryStage.show();
 	}
 	
@@ -199,7 +197,17 @@ public class App extends Application
 		return;
 	}
 	
+	/**
+	 * Creates a hover node that appears when the user enters a datum from the <code>XYChart.Series</code>
+	 */
 	class HoverNode extends StackPane {
+		/**
+		 * @param value	Shows this value when <code>setOnMouseEntered</code> is called.
+		 * @param paint The interface for the background color of the box that appears on the datum when <code>setOnMouseEntered</code> is called. 
+		 * 				For example <code>javafx.scene.paint.Color.WHITE</code>.	
+		 * @see javafx.scene.paint.Paint
+		 * @see javafx.scene.paint.Color
+		 */
 		public HoverNode(long value, final Paint paint) {
 
 			final Label label = new Label(String.valueOf(value));

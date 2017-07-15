@@ -10,6 +10,11 @@ import org.slf4j.LoggerFactory;
 import com.sim.agent.AgentPlain;
 import com.sim.agent.Agent.BREED;
 
+/**
+ * Unit tests for <code>com.sim.Agent.AgentPlain</code>
+ * 
+ * @author Max Hoefl
+ */
 public class Test_AgentPlain {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Test_AgentPlain.class);

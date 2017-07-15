@@ -1,0 +1,26 @@
+.slider .track {
+    -fx-height:600;
+    -fx-align: center;
+}
+
+/* 
+.chart-series-line {    
+    -fx-chart-series-line: 3px #3fff75;
+}
+*/
+ 
+.chart { 
+	-fx-stroke: #3fff75;
+	-fx-fill: #3fff75;    
+				
+}
+.seriesBreedNC { -fx-stroke: #f0e68c; }
+
+.chart-plot-background {
+    -fx-background-color: #ffffff;
+}
+
+.root {
+	-fx-background-color: #000000;
+	-fx-text-fill: #ffffff;
+}

@@ -12,7 +12,7 @@ public class SparkConnection {
 	
 	private static JavaSparkContext spContext = null;
 	private static SparkSession sparkSession = null;
-	private static String tempDir = "./data-warehouse/"; // this is not going to work
+	private static String tempDir = "./data-warehouse/"; 
 	
 	private static void getConnection() {
 		
